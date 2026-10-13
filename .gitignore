@@ -1,0 +1,22 @@
+**/bin/
+**/obj/
+**/TestResults/
+.vs/
+.vscode/
+.idea/
+.env
+.env.*
+!**/.env.example
+# Local Compose contains database credentials; commit the example instead.
+/compose.yaml
+.codex/
+.agents/
+.aws/
+**/node_modules/
+**/dist/
+*.log
+**/appsettings.*.local.json
+backups/
+migration-review.sql
+*.user
+*.suo

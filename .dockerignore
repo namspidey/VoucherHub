@@ -1,0 +1,15 @@
+**/bin/
+**/obj/
+.git/
+.vs/
+.vscode/
+.codex/
+.agents/
+**/node_modules/
+**/TestResults/
+**/appsettings.*.local.json
+**/.env
+**/.env.*
+docs/
+scripts/
+postgres_data/

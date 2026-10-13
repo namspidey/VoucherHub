@@ -1,0 +1,22 @@
+@api = http://localhost:5242/api
+
+### Health
+GET http://localhost:5242/health/ready
+
+### Public campaigns
+GET {{api}}/campaigns?page=1&pageSize=20
+
+### Login — replace credentials with a verified account
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "VoucherHub@123"
+}
+
+### Redeem — replace offer ID, JWT and key with real values
+POST {{api}}/voucher-offers/00000000-0000-0000-0000-000000000000/redeem
+Authorization: Bearer <access-token>
+Idempotency-Key: 00000000-0000-4000-8000-000000000001
+

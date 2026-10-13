@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/backend/" />
+  <Folder Name="/backend/src/">
+    <Project Path="backend/src/VoucherHub.Api/VoucherHub.Api.csproj" />
+    <Project Path="backend/src/VoucherHub.Application/VoucherHub.Application.csproj" />
+    <Project Path="backend/src/VoucherHub.Domain/VoucherHub.Domain.csproj" />
+    <Project Path="backend/src/VoucherHub.Infrastructure/VoucherHub.Infrastructure.csproj" />
+  </Folder>
+</Solution>

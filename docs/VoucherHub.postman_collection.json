@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "VoucherHub MVP API",
+    "description": "Import cùng environment template. Thay email/password, lấy verification_token từ Mailpit. Không chia sẻ environment có token thật.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{access_token}}", "type": "string" }] },
+  "item": [
+    {
+      "name": "Auth",
+      "auth": { "type": "noauth" },
+      "item": [
+        { "name": "Register", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\",\"password\":\"{{password}}\",\"displayName\":\"Voucher User\"}" }, "url": "{{base_url}}/auth/register" } },
+        { "name": "Resend verification", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\"}" }, "url": "{{base_url}}/auth/resend-verification" } },
+        { "name": "Verify email", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"token\":\"{{verification_token}}\"}" }, "url": "{{base_url}}/auth/verify-email" } },
+        {
+          "name": "Login user",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) {", "  pm.environment.set('access_token', pm.response.json().accessToken);", "}"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\",\"password\":\"{{password}}\"}" }, "url": "{{base_url}}/auth/login" }
+        },
+        {
+          "name": "Login admin",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) {", "  pm.environment.set('admin_token', pm.response.json().accessToken);", "}"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"email\":\"{{admin_email}}\",\"password\":\"{{admin_password}}\"}" }, "url": "{{base_url}}/auth/login" }
+        }
+      ]
+    },
+    {
+      "name": "Public",
+      "auth": { "type": "noauth" },
+      "item": [
+        { "name": "Campaigns", "request": { "method": "GET", "url": "{{base_url}}/campaigns?page=1&pageSize=20" } },
+        { "name": "Campaign detail", "request": { "method": "GET", "url": "{{base_url}}/campaigns/{{campaign_id}}" } },
+        { "name": "Health live", "request": { "method": "GET", "url": "http://localhost:5242/health/live" } },
+        { "name": "Health ready", "request": { "method": "GET", "url": "http://localhost:5242/health/ready" } }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Me",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) {", "  pm.environment.set('user_id', pm.response.json().id);", "}"] } }],
+          "request": { "method": "GET", "url": "{{base_url}}/users/me" }
+        },
+        { "name": "Point history", "request": { "method": "GET", "url": "{{base_url}}/users/me/point-transactions?page=1&pageSize=20" } },
+        { "name": "My vouchers", "request": { "method": "GET", "url": "{{base_url}}/users/me/vouchers?page=1&pageSize=20" } },
+        { "name": "My voucher detail", "request": { "method": "GET", "url": "{{base_url}}/users/me/vouchers/{{voucher_id}}" } },
+        {
+          "name": "Redeem offer",
+          "description": "Lần đầu tự sinh request_key. Retry giữ nguyên key. Muốn đổi thêm một voucher, xóa biến request_key trong environment trước khi Send lại.",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["if (!pm.environment.get('request_key')) {", "  pm.environment.set('request_key', pm.variables.replaceIn('{{$guid}}'));", "}"] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201 || pm.response.code === 200) {", "  pm.environment.set('voucher_id', pm.response.json().id);", "}"] } }
+          ],
+          "request": { "method": "POST", "header": [{ "key": "Idempotency-Key", "value": "{{request_key}}" }], "url": "{{base_url}}/voucher-offers/{{offer_id}}/redeem" }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{admin_token}}", "type": "string" }] },
+      "item": [
+        { "name": "Campaign list", "request": { "method": "GET", "url": "{{base_url}}/admin/campaigns?page=1&pageSize=20" } },
+        {
+          "name": "Create campaign",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) {", "  pm.environment.set('campaign_id', pm.response.json().id);", "}"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"name\":\"Flash Sale\",\"startsAt\":\"2030-10-10T18:00:00+07:00\",\"endsAt\":\"2030-10-10T20:00:00+07:00\",\"maxRedemptionsPerUser\":2}" }, "url": "{{base_url}}/admin/campaigns" }
+        },
+        { "name": "Campaign detail", "request": { "method": "GET", "url": "{{base_url}}/admin/campaigns/{{campaign_id}}" } },
+        { "name": "Update campaign", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"name\":\"Flash Sale\",\"startsAt\":\"2030-10-10T18:00:00+07:00\",\"endsAt\":\"2030-10-10T20:00:00+07:00\",\"maxRedemptionsPerUser\":2}" }, "url": "{{base_url}}/admin/campaigns/{{campaign_id}}" } },
+        {
+          "name": "Create offer",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 201) {", "  pm.environment.set('offer_id', pm.response.json().id);", "}"] } }],
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"name\":\"Voucher 50K\",\"pointsCost\":100,\"totalQuantity\":10,\"expiresAt\":\"2030-10-31T23:59:00+07:00\"}" }, "url": "{{base_url}}/admin/campaigns/{{campaign_id}}/offers" }
+        },
+        { "name": "Offer list", "request": { "method": "GET", "url": "{{base_url}}/admin/campaigns/{{campaign_id}}/offers" } },
+        { "name": "Update offer", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"name\":\"Voucher 50K\",\"pointsCost\":100,\"totalQuantity\":10,\"expiresAt\":\"2030-10-31T23:59:00+07:00\"}" }, "url": "{{base_url}}/admin/campaigns/{{campaign_id}}/offers/{{offer_id}}" } },
+        { "name": "Publish campaign", "request": { "method": "POST", "url": "{{base_url}}/admin/campaigns/{{campaign_id}}/publish" } },
+        { "name": "Cancel campaign", "request": { "method": "POST", "url": "{{base_url}}/admin/campaigns/{{campaign_id}}/cancel" } },
+        { "name": "Users", "request": { "method": "GET", "url": "{{base_url}}/admin/users?page=1&pageSize=20" } },
+        { "name": "Grant points", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"amount\":500,\"reason\":\"Event reward\"}" }, "url": "{{base_url}}/admin/users/{{user_id}}/points/grants" } },
+        { "name": "User point history", "request": { "method": "GET", "url": "{{base_url}}/admin/users/{{user_id}}/point-transactions?page=1&pageSize=20" } },
+        { "name": "Block user", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"reason\":\"Policy violation\"}" }, "url": "{{base_url}}/admin/users/{{user_id}}/block" } },
+        { "name": "Issued vouchers", "request": { "method": "GET", "url": "{{base_url}}/admin/user-vouchers?page=1&pageSize=20" } },
+        { "name": "Audit logs", "request": { "method": "GET", "url": "{{base_url}}/admin/audit-logs?page=1&pageSize=20" } }
+      ]
+    }
+  ]
+}
